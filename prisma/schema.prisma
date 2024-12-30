@@ -7,6 +7,95 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  email    String   @unique
+  password String
+  name     String?  @default("NoName")
+  picture  String?  @default("/uploads/user.png")
+  role     UserRole @default(USER)
+
+  favoriteTeams   FavoriteTeam[]
+  favoriteLeagues FavoriteLeague[]
+
+  @@map("user")
+}
+
+model FavoriteTeam {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @map("user_id")
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId String @map("team_id")
+
+  @@unique([userId, teamId])
+  @@map("favorite_team")
+}
+
+model FavoriteLeague {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String @map("user_id")
+  league   League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueId String @map("league_id")
+
+  @@unique([userId, leagueId])
+  @@map("favorite_league")
+}
+
+model Team {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name       String
+  city       String
+  country    String
+  code       String
+  founded    Int
+  isNational Boolean @map("is_national")
+  logo       String?
+
+  fixtureHome      Fixture[]          @relation("HomeFixtures")
+  fixtureAway      Fixture[]          @relation("AwayFixtures")
+  matchEvents      MatchEvent[]
+  playerStatistics PlayerStatistics[]
+  teamStatistics   TeamStatistics[]
+  teamTrophies     TeamTrophy[]
+
+  favoriteTeams FavoriteTeam[]
+
+  @@map("team")
+}
+
+model League {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name    String
+  type    LeagueType
+  logo    String
+  round   String
+  country String
+  season  Int
+
+  fixtures         Fixture[]
+  playerStatistics PlayerStatistics[]
+  teamStatistics   TeamStatistics[]
+
+  favoriteLeagues FavoriteLeague[]
+
+  @@map("league")
+}
+
 model Fixture {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now()) @map("created_at")
@@ -42,29 +131,6 @@ model Fixture {
 
   @@index([date, leagueId])
   @@map("fixture")
-}
-
-model Team {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  name       String
-  city       String
-  country    String
-  code       String
-  founded    Int
-  isNational Boolean @map("is_national")
-  logo       String?
-
-  fixtureHome      Fixture[]          @relation("HomeFixtures")
-  fixtureAway      Fixture[]          @relation("AwayFixtures")
-  matchEvents      MatchEvent[]
-  playerStatistics PlayerStatistics[]
-  teamStatistics   TeamStatistics[]
-  teamTrophies     TeamTrophy[]
-
-  @@map("team")
 }
 
 model Player {
@@ -114,7 +180,7 @@ model Country {
 
   name String
   code String
-  flag String
+  flag String?
 
   @@map("country")
 }
@@ -132,25 +198,6 @@ model Venue {
   image   String?
 
   @@map("venue")
-}
-
-model League {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  name    String
-  type    LeagueType // Используем enum LeagueType
-  logo    String
-  round   String
-  country String
-  season  Int
-
-  fixtures         Fixture[]
-  playerStatistics PlayerStatistics[]
-  teamStatistics   TeamStatistics[]
-
-  @@map("league")
 }
 
 model Staff {
@@ -437,4 +484,9 @@ enum TrophyType {
   INDIVIDUAL_PLAYER_OF_YEAR
   TOP_SCORER
   BEST_GOALKEEPER
+}
+
+enum UserRole {
+  USER
+  ADMIN
 }
